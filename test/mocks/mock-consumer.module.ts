@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ClientsModule, KafkaOptions, Transport } from '@nestjs/microservices';
-import { KAFKA_CLIENT_TOKEN } from './constants/kafka-client-token.constant';
+
+import { MockConsumerController } from './mock-consumer.controller';
+import { KAFKA_CLIENT_TOKEN } from '../../src/constants/kafka-client-token.constant';
 
 @Module({
   imports: [
@@ -15,9 +15,6 @@ import { KAFKA_CLIENT_TOKEN } from './constants/kafka-client-token.constant';
             options: {
               client: {
                 brokers: ['localhost:9092', 'kafka:29092'],
-                retry: {
-                  initialRetryTime: 5_000,
-                },
               },
               producer: {
                 allowAutoTopicCreation: true,
@@ -29,7 +26,6 @@ import { KAFKA_CLIENT_TOKEN } from './constants/kafka-client-token.constant';
       },
     ]),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [MockConsumerController],
 })
-export class AppModule {}
+export class MockConsumerModule {}
