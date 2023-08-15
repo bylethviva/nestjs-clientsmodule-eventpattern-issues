@@ -4,26 +4,44 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MockConsumerModule } from './mocks/mock-consumer.module';
 import { MockConsumerController } from './mocks/mock-consumer.controller';
-import { ClientKafka } from '@nestjs/microservices';
+import { ClientKafka, KafkaOptions, Transport } from '@nestjs/microservices';
 import { KAFKA_CLIENT_TOKEN } from '../src/constants/kafka-client-token.constant';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let client: ClientKafka;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [MockConsumerModule, AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     client = await app.get(KAFKA_CLIENT_TOKEN);
+    app.connectMicroservice<KafkaOptions>({
+      transport: Transport.KAFKA,
+      options: {
+        client: {
+          brokers: ['localhost:9092', 'kafka:29092'],
+          retry: {
+            initialRetryTime: 5_000,
+          },
+        },
+        producer: {
+          allowAutoTopicCreation: true,
+        },
+        producerOnlyMode: process.env.NODE_ENV !== 'test' ? true : false,
+      },
+    });
+
+    await app.startAllMicroservices();
+
     await app.init();
   });
 
   afterAll(async () => {
     client.close();
-  }, 15_000);
+  });
 
   it('/ (GET)', async () => {
     await request(app.getHttpServer())
@@ -44,7 +62,7 @@ describe('AppController (e2e)', () => {
         } catch (err) {
           return rej(err);
         }
-      }, 5_000);
+      }, 9_000);
     });
-  }, 15_000);
+  }, 10_000);
 });
